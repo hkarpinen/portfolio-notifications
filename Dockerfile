@@ -7,6 +7,7 @@ COPY src/Domain/Domain.csproj src/Domain/
 COPY src/Application/Application.csproj src/Application/
 COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
 COPY src/Client/Client.csproj src/Client/
+COPY tests/Tests/Tests.csproj tests/Tests/
 RUN dotnet restore Notifications.sln
 
 FROM restore AS build
