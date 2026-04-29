@@ -1,6 +1,6 @@
 # portfolio-notifications
 
-Real-time notification service. Consumes domain events from the bills and forum services over RabbitMQ, persists them, and fans them out to connected clients over Server-Sent Events (SSE).
+Real-time notification service. Consumes domain events from the finance and forum services over RabbitMQ, persists them, and fans them out to connected clients over Server-Sent Events (SSE).
 
 ## Stack
 
