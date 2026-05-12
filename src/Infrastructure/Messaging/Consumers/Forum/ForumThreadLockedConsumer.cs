@@ -2,7 +2,7 @@ using Infrastructure.Messaging.Events;
 using Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Notifications.Application.Contracts;
+using Notifications.Application.Commands;
 using Notifications.Application.Services;
 using Npgsql;
 
@@ -28,15 +28,14 @@ internal sealed class ForumThreadLockedConsumer : IConsumer<ForumThreadLockedEve
         var threadAuthor = await _db.ThreadAuthors.FindAsync(new object[] { msg.ThreadId }, context.CancellationToken)
             ?? throw new InvalidOperationException($"ThreadAuthor projection missing for thread {msg.ThreadId} — will retry");
 
-        await _publisher.PublishAsync(new NotificationStreamEventDto(
+        await _publisher.PublishAsync(new PublishNotificationCommand(
             EventId: Guid.NewGuid(),
             RecipientUserId: threadAuthor.AuthorId,
             EventType: "forum.thread.locked",
             Title: "Your thread was locked",
             Message: "A moderator locked your thread",
             DeepLink: $"/communities/{threadAuthor.CommunitySlug}/threads/{msg.ThreadId}",
-            OccurredAt: msg.OccurredAt,
-            IsRead: false), context.CancellationToken);
+            OccurredAt: msg.OccurredAt), context.CancellationToken);
 
         _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(ForumThreadLockedEvent), ProcessedAt = DateTime.UtcNow });
         try { await _db.SaveChangesAsync(context.CancellationToken); }

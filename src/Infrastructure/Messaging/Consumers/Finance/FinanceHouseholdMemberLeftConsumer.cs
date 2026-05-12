@@ -6,24 +6,23 @@ using Npgsql;
 
 namespace Infrastructure.Messaging.Consumers;
 
-internal sealed class BillsHouseholdCreatedConsumer : IConsumer<BillsHouseholdCreatedEvent>
+internal sealed class FinanceHouseholdMemberLeftConsumer : IConsumer<FinanceHouseholdMemberLeftEvent>
 {
     private readonly NotificationsDbContext _db;
 
-    public BillsHouseholdCreatedConsumer(NotificationsDbContext db) => _db = db;
+    public FinanceHouseholdMemberLeftConsumer(NotificationsDbContext db) => _db = db;
 
-    public async Task Consume(ConsumeContext<BillsHouseholdCreatedEvent> context)
+    public async Task Consume(ConsumeContext<FinanceHouseholdMemberLeftEvent> context)
     {
         var msg = context.Message;
         var msgId = context.MessageId ?? Guid.NewGuid();
         if (await _db.ProcessedEvents.AnyAsync(x => x.EventId == msgId, context.CancellationToken)) return;
 
         var existing = await _db.HouseholdMembers
-            .FirstOrDefaultAsync(x => x.HouseholdId == msg.HouseholdId && x.UserId == msg.OwnerId, context.CancellationToken);
-        if (existing is null)
-            _db.HouseholdMembers.Add(new HouseholdMemberProjection { HouseholdId = msg.HouseholdId, UserId = msg.OwnerId, IsActive = true });
+            .FirstOrDefaultAsync(x => x.HouseholdId == msg.HouseholdId && x.UserId == msg.UserId, context.CancellationToken);
+        if (existing is not null) existing.IsActive = false;
 
-        _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(BillsHouseholdCreatedEvent), ProcessedAt = DateTime.UtcNow });
+        _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(FinanceHouseholdMemberLeftEvent), ProcessedAt = DateTime.UtcNow });
         try { await _db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }

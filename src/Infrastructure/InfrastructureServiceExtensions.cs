@@ -1,11 +1,16 @@
+using Infrastructure.Managers;
 using Infrastructure.Messaging.Consumers;
 using Infrastructure.Notifications;
 using Infrastructure.Persistence;
+using Infrastructure.Queries;
 using Infrastructure.Repositories;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Notifications.Application.Managers;
+using Notifications.Application.Queries;
+using Notifications.Application.Repositories;
 using Notifications.Application.Services;
 
 namespace Infrastructure;
@@ -38,15 +43,15 @@ public static class InfrastructureServiceExtensions
             x.AddConsumer<ForumThreadLockedConsumer>();
             x.AddConsumer<ForumCommunityOwnershipTransferredConsumer>();
 
-            // Bills consumers
-            x.AddConsumer<BillsHouseholdCreatedConsumer>();
-            x.AddConsumer<BillsHouseholdMemberJoinedConsumer>();
-            x.AddConsumer<BillsHouseholdMemberLeftConsumer>();
-            x.AddConsumer<BillsHouseholdMemberRemovedConsumer>();
-            x.AddConsumer<BillsHouseholdMemberRoleChangedConsumer>();
-            x.AddConsumer<BillsHouseholdOwnershipTransferredConsumer>();
-            x.AddConsumer<BillsBillCreatedConsumer>();
-            x.AddConsumer<BillsBillSplitCreatedConsumer>();
+            // Finance consumers
+            x.AddConsumer<FinanceHouseholdCreatedConsumer>();
+            x.AddConsumer<FinanceHouseholdMemberJoinedConsumer>();
+            x.AddConsumer<FinanceHouseholdMemberLeftConsumer>();
+            x.AddConsumer<FinanceHouseholdMemberRemovedConsumer>();
+            x.AddConsumer<FinanceHouseholdMemberRoleChangedConsumer>();
+            x.AddConsumer<FinanceHouseholdOwnershipTransferredConsumer>();
+            x.AddConsumer<FinanceExpenseCreatedConsumer>();
+            x.AddConsumer<FinanceExpenseSplitCreatedConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -73,6 +78,8 @@ public static class InfrastructureServiceExtensions
         });
 
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationQuery, NotificationQuery>();
+        services.AddScoped<INotificationManager, NotificationManager>();
         services.AddScoped<INotificationPublisher, NotificationPublisher>();
         services.AddSingleton<INotificationDispatcher, InMemoryNotificationDispatcher>();
 

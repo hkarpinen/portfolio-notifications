@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Notifications.Application.Contracts;
+using Notifications.Application.Managers;
+using Notifications.Application.Queries;
 using Notifications.Application.Services;
 
 namespace Client.Controllers;
@@ -17,34 +19,34 @@ public sealed class NotificationsController : ControllerBase
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> List(
-        [FromServices] INotificationRepository repo,
+        [FromServices] INotificationQuery query,
         CancellationToken cancellationToken)
     {
         var userId = User.GetRequiredUserId();
-        var items = await repo.GetRecentAsync(userId, limit: 50, cancellationToken);
-        return Ok(new NotificationStreamDto(items));
+        var result = await query.GetRecentAsync(userId, limit: 50, cancellationToken);
+        return Ok(result);
     }
 
     [HttpPut("{eventId:guid}/read")]
     [Authorize]
     public async Task<IActionResult> MarkRead(
         [FromRoute] Guid eventId,
-        [FromServices] INotificationRepository repo,
+        [FromServices] INotificationManager manager,
         CancellationToken cancellationToken)
     {
         var userId = User.GetRequiredUserId();
-        await repo.MarkReadAsync(eventId, userId, cancellationToken);
+        await manager.MarkReadAsync(eventId, userId, cancellationToken);
         return NoContent();
     }
 
     [HttpPut("read-all")]
     [Authorize]
     public async Task<IActionResult> MarkAllRead(
-        [FromServices] INotificationRepository repo,
+        [FromServices] INotificationManager manager,
         CancellationToken cancellationToken)
     {
         var userId = User.GetRequiredUserId();
-        await repo.MarkAllReadAsync(userId, cancellationToken);
+        await manager.MarkAllReadAsync(userId, cancellationToken);
         return NoContent();
     }
 
@@ -53,7 +55,7 @@ public sealed class NotificationsController : ControllerBase
     [EnableRateLimiting("notification-stream")]
     public async Task Stream(
         [FromServices] INotificationDispatcher dispatcher,
-        [FromServices] INotificationRepository repo,
+        [FromServices] INotificationQuery query,
         CancellationToken cancellationToken)
     {
         var userId = User.GetRequiredUserId();
@@ -98,10 +100,10 @@ public sealed class NotificationsController : ControllerBase
         }
 
         // Replay unread persisted notifications so the client recovers its bell
-        // state after a page reload or reconnect gap (notifications dispatched
-        // while the SSE was down are already in the DB).
-        var history = await repo.GetRecentAsync(userId, limit: 50, cancellationToken);
-        foreach (var n in history.Where(n => !n.IsRead).Reverse())
+        // state after a page reload or reconnect gap. Backend SSE replay handles
+        // reconnect history — do not re-fetch inside openSource() on the client.
+        var history = await query.GetRecentAsync(userId, limit: 50, cancellationToken);
+        foreach (var n in history.Items.Where(n => !n.IsRead).Reverse())
             await WriteEventAsync(n, cancellationToken);
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

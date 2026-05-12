@@ -2,7 +2,7 @@ using Infrastructure.Messaging.Events;
 using Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Notifications.Application.Contracts;
+using Notifications.Application.Commands;
 using Notifications.Application.Services;
 using Npgsql;
 
@@ -29,15 +29,14 @@ internal sealed class ForumUserBannedConsumer : IConsumer<ForumUserBannedEvent>
             ? $"You have been banned: {msg.Reason}"
             : "You have been banned from this community";
 
-        await _publisher.PublishAsync(new NotificationStreamEventDto(
+        await _publisher.PublishAsync(new PublishNotificationCommand(
             EventId: Guid.NewGuid(),
             RecipientUserId: msg.UserId,
             EventType: "forum.user.banned",
             Title: "Community ban",
             Message: message,
             DeepLink: null,
-            OccurredAt: msg.OccurredAt,
-            IsRead: false), context.CancellationToken);
+            OccurredAt: msg.OccurredAt), context.CancellationToken);
 
         _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(ForumUserBannedEvent), ProcessedAt = DateTime.UtcNow });
         try { await _db.SaveChangesAsync(context.CancellationToken); }

@@ -2,7 +2,7 @@ using Infrastructure.Messaging.Events;
 using Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Notifications.Application.Contracts;
+using Notifications.Application.Commands;
 using Notifications.Application.Services;
 using Npgsql;
 
@@ -25,15 +25,14 @@ internal sealed class ForumCommunityOwnershipTransferredConsumer : IConsumer<For
         var msgId = context.MessageId ?? Guid.NewGuid();
         if (await _db.ProcessedEvents.AnyAsync(x => x.EventId == msgId, context.CancellationToken)) return;
 
-        await _publisher.PublishAsync(new NotificationStreamEventDto(
+        await _publisher.PublishAsync(new PublishNotificationCommand(
             EventId: Guid.NewGuid(),
             RecipientUserId: msg.NewOwnerId,
             EventType: "forum.community.ownership_transferred",
             Title: "You are now the community owner",
             Message: "Community ownership has been transferred to you",
             DeepLink: $"/communities/{msg.CommunityId}",
-            OccurredAt: msg.OccurredAt,
-            IsRead: false), context.CancellationToken);
+            OccurredAt: msg.OccurredAt), context.CancellationToken);
 
         _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(ForumCommunityOwnershipTransferredEvent), ProcessedAt = DateTime.UtcNow });
         try { await _db.SaveChangesAsync(context.CancellationToken); }

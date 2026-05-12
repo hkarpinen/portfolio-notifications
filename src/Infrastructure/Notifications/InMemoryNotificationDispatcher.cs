@@ -10,6 +10,7 @@ namespace Infrastructure.Notifications;
 /// In-process, per-user notification fan-out backed by System.Threading.Channels.
 /// Registered as Singleton so all scoped services share the same instance.
 /// Supports multiple concurrent connections per user (e.g. multiple browser tabs).
+/// KNOWN LIMITATION: single-instance only — scaling beyond one replica requires a backplane.
 /// </summary>
 public sealed class InMemoryNotificationDispatcher : INotificationDispatcher
 {
@@ -31,8 +32,13 @@ public sealed class InMemoryNotificationDispatcher : INotificationDispatcher
         Guid userId,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var channel = Channel.CreateUnbounded<NotificationStreamEventDto>(
-            new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+        var channel = Channel.CreateBounded<NotificationStreamEventDto>(
+            new BoundedChannelOptions(256)
+            {
+                FullMode = BoundedChannelFullMode.DropOldest,
+                SingleReader = true,
+                SingleWriter = false
+            });
 
         lock (_lock)
         {

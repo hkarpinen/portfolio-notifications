@@ -8,12 +8,12 @@ using Npgsql;
 
 namespace Infrastructure.Messaging.Consumers;
 
-internal sealed class BillsBillCreatedConsumer : IConsumer<FinanceExpenseCreatedEvent>
+internal sealed class FinanceExpenseCreatedConsumer : IConsumer<FinanceExpenseCreatedEvent>
 {
     private readonly NotificationsDbContext _db;
     private readonly INotificationPublisher _publisher;
 
-    public BillsBillCreatedConsumer(NotificationsDbContext db, INotificationPublisher publisher)
+    public FinanceExpenseCreatedConsumer(NotificationsDbContext db, INotificationPublisher publisher)
     {
         _db = db;
         _publisher = publisher;
@@ -34,10 +34,10 @@ internal sealed class BillsBillCreatedConsumer : IConsumer<FinanceExpenseCreated
             await _publisher.PublishAsync(new PublishNotificationCommand(
                 EventId: Guid.NewGuid(),
                 RecipientUserId: m.UserId,
-                EventType: "bills.bill.created",
-                Title: "New bill added",
+                EventType: "finance.expense.created",
+                Title: "New expense added",
                 Message: $"\"{msg.Title}\" has been added to the household",
-                DeepLink: $"/bills/households/{msg.HouseholdId}/bills/{msg.ExpenseId}",
+                DeepLink: $"/households/{msg.HouseholdId}/expenses/{msg.ExpenseId}",
                 OccurredAt: msg.OccurredAt), context.CancellationToken);
         }
 

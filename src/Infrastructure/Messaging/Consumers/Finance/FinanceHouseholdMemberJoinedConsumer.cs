@@ -6,13 +6,13 @@ using Npgsql;
 
 namespace Infrastructure.Messaging.Consumers;
 
-internal sealed class BillsHouseholdMemberJoinedConsumer : IConsumer<BillsHouseholdMemberJoinedEvent>
+internal sealed class FinanceHouseholdMemberJoinedConsumer : IConsumer<FinanceHouseholdMemberJoinedEvent>
 {
     private readonly NotificationsDbContext _db;
 
-    public BillsHouseholdMemberJoinedConsumer(NotificationsDbContext db) => _db = db;
+    public FinanceHouseholdMemberJoinedConsumer(NotificationsDbContext db) => _db = db;
 
-    public async Task Consume(ConsumeContext<BillsHouseholdMemberJoinedEvent> context)
+    public async Task Consume(ConsumeContext<FinanceHouseholdMemberJoinedEvent> context)
     {
         var msg = context.Message;
         var msgId = context.MessageId ?? Guid.NewGuid();
@@ -26,7 +26,7 @@ internal sealed class BillsHouseholdMemberJoinedConsumer : IConsumer<BillsHouseh
         else
             existing.IsActive = true;
 
-        _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(BillsHouseholdMemberJoinedEvent), ProcessedAt = DateTime.UtcNow });
+        _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(FinanceHouseholdMemberJoinedEvent), ProcessedAt = DateTime.UtcNow });
         try { await _db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }

@@ -2,7 +2,7 @@ using System.Text.Json;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Notifications.Application.Contracts;
-using Notifications.Application.Services;
+using Notifications.Application.Repositories;
 
 namespace Infrastructure.Repositories;
 
@@ -23,19 +23,6 @@ internal sealed class NotificationRepository : INotificationRepository
         var entity = new PersistedNotification(dto.EventId, dto.RecipientUserId, dto.EventType, payload, dto.OccurredAt);
         await _dbContext.Notifications.AddAsync(entity, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<NotificationStreamEventDto>> GetRecentAsync(
-        Guid userId, int limit = 50, CancellationToken cancellationToken = default)
-    {
-        var rows = await _dbContext.Notifications
-            .Where(n => n.UserId == userId)
-            .OrderByDescending(n => n.CreatedAt)
-            .Take(limit)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        return rows.Select(Deserialize).OfType<NotificationStreamEventDto>().ToList();
     }
 
     public async Task MarkReadAsync(Guid notificationId, Guid userId, CancellationToken cancellationToken = default)

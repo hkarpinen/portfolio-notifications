@@ -2,7 +2,7 @@ using Infrastructure.Messaging.Events;
 using Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Notifications.Application.Contracts;
+using Notifications.Application.Commands;
 using Notifications.Application.Services;
 using Npgsql;
 
@@ -25,15 +25,14 @@ internal sealed class ForumModeratorAppointedConsumer : IConsumer<ForumModerator
         var msgId = context.MessageId ?? Guid.NewGuid();
         if (await _db.ProcessedEvents.AnyAsync(x => x.EventId == msgId, context.CancellationToken)) return;
 
-        await _publisher.PublishAsync(new NotificationStreamEventDto(
+        await _publisher.PublishAsync(new PublishNotificationCommand(
             EventId: Guid.NewGuid(),
             RecipientUserId: msg.UserId,
             EventType: "forum.moderator.appointed",
             Title: "You are now a moderator",
             Message: "You have been appointed as a community moderator",
             DeepLink: $"/communities/{msg.CommunityId}",
-            OccurredAt: msg.OccurredAt,
-            IsRead: false), context.CancellationToken);
+            OccurredAt: msg.OccurredAt), context.CancellationToken);
 
         _db.ProcessedEvents.Add(new ProcessedEvent { EventId = msgId, EventType = nameof(ForumModeratorAppointedEvent), ProcessedAt = DateTime.UtcNow });
         try { await _db.SaveChangesAsync(context.CancellationToken); }

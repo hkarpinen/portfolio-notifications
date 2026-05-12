@@ -2,10 +2,10 @@
 
 ## Overview
 
-The notifications service is a pure consumer. It has no domain aggregates of its own — it reacts to domain events published by the `bills` and `forum` services, persists notifications to PostgreSQL, and delivers them to clients in real time over SSE.
+The notifications service is a pure consumer. It has no domain aggregates of its own — it reacts to domain events published by the `finance` and `forum` services, persists notifications to PostgreSQL, and delivers them to clients in real time over SSE.
 
 ```
-bills / forum
+finance / forum
     │  (RabbitMQ domain events)
     ▼
 MassTransit Consumers
@@ -21,7 +21,7 @@ INotificationPublisher
 | Table | Purpose |
 |---|---|
 | `persisted_notifications` | One row per notification per recipient; stores type, JSON payload, read flag |
-| `household_member_projections` | Read-model of active household memberships, built from bills events, used to fan-out bill notifications to all members |
+| `household_member_projections` | Read-model of active household memberships, built from finance events, used to fan-out expense notifications to all members |
 | `thread_author_projections` | Maps `ThreadId → AuthorId + CommunitySlug`; built from `forum.thread.created`, used to notify thread authors of new comments |
 | `comment_author_projections` | Maps `CommentId → AuthorId`; built from `forum.comment.created`, used to notify comment authors of replies |
 | `processed_events` | Idempotency table — deduplicates MassTransit message redeliveries by `MessageId` |
@@ -44,18 +44,18 @@ Every consumer checks `processed_events` before acting. If a row with the same `
 
 ## Event catalogue
 
-### Bills events consumed
+### Finance events consumed
 
 | Event | Consumer action |
 |---|---|
-| `BillsHouseholdCreatedEvent` | Seed `household_member_projections` with the owner |
-| `BillsHouseholdMemberJoinedEvent` | Upsert member as active in projection |
-| `BillsHouseholdMemberLeftEvent` | Mark member inactive in projection |
-| `BillsHouseholdMemberRemovedEvent` | Mark member inactive; notify removed user (`bills.member.removed`) |
-| `BillsHouseholdMemberRoleChangedEvent` | Notify affected user (`bills.member.role_changed`) |
-| `BillsHouseholdOwnershipTransferredEvent` | Notify new owner (`bills.household.ownership_transferred`) |
-| `BillsBillCreatedEvent` | Fan-out `bills.bill.created` to all active household members except the creator |
-| `BillsBillSplitCreatedEvent` | Notify assigned member (`bills.split.created`) |
+| `FinanceHouseholdCreatedEvent` | Seed `household_member_projections` with the owner |
+| `FinanceHouseholdMemberJoinedEvent` | Upsert member as active in projection |
+| `FinanceHouseholdMemberLeftEvent` | Mark member inactive in projection |
+| `FinanceHouseholdMemberRemovedEvent` | Mark member inactive; notify removed user (`finance.member.removed`) |
+| `FinanceHouseholdMemberRoleChangedEvent` | Notify affected user (`finance.member.role_changed`) |
+| `FinanceHouseholdOwnershipTransferredEvent` | Notify new owner (`finance.household.ownership_transferred`) |
+| `FinanceExpenseCreatedEvent` | Fan-out `finance.expense.created` to all active household members except the creator |
+| `FinanceExpenseSplitCreatedEvent` | Notify assigned member (`finance.expense_split.created`) |
 
 ### Forum events consumed
 

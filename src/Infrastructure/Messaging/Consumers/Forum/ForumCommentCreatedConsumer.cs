@@ -2,7 +2,7 @@ using Infrastructure.Messaging.Events;
 using Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Notifications.Application.Contracts;
+using Notifications.Application.Commands;
 using Notifications.Application.Services;
 using Npgsql;
 
@@ -37,15 +37,14 @@ internal sealed class ForumCommentCreatedConsumer : IConsumer<ForumCommentCreate
             ?? throw new InvalidOperationException($"ThreadAuthor projection missing for thread {msg.ThreadId} — will retry");
         if (threadAuthor.AuthorId != msg.AuthorId)
         {
-            await _publisher.PublishAsync(new NotificationStreamEventDto(
+            await _publisher.PublishAsync(new PublishNotificationCommand(
                 EventId: Guid.NewGuid(),
                 RecipientUserId: threadAuthor.AuthorId,
                 EventType: "forum.comment.created",
                 Title: "New comment on your thread",
                 Message: "Someone commented on your thread",
                 DeepLink: $"/communities/{threadAuthor.CommunitySlug}/threads/{msg.ThreadId}",
-                OccurredAt: msg.OccurredAt,
-                IsRead: false), context.CancellationToken);
+                OccurredAt: msg.OccurredAt), context.CancellationToken);
         }
 
         // Notify the parent comment author on a reply.
@@ -56,15 +55,14 @@ internal sealed class ForumCommentCreatedConsumer : IConsumer<ForumCommentCreate
                 && parentAuthor.AuthorId != msg.AuthorId
                 && parentAuthor.AuthorId != threadAuthor.AuthorId)
             {
-                await _publisher.PublishAsync(new NotificationStreamEventDto(
+                await _publisher.PublishAsync(new PublishNotificationCommand(
                     EventId: Guid.NewGuid(),
                     RecipientUserId: parentAuthor.AuthorId,
                     EventType: "forum.comment.reply",
                     Title: "Someone replied to your comment",
                     Message: "You have a new reply",
                     DeepLink: $"/communities/{threadAuthor.CommunitySlug}/threads/{msg.ThreadId}",
-                    OccurredAt: msg.OccurredAt,
-                    IsRead: false), context.CancellationToken);
+                    OccurredAt: msg.OccurredAt), context.CancellationToken);
             }
         }
 
