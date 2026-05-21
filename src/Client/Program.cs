@@ -67,8 +67,8 @@ try
         var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
         options.AddDefaultPolicy(policy =>
             policy.WithOrigins(origins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
+                  .WithHeaders("Content-Type", "Authorization")
+                  .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
                   .AllowCredentials());
     });
 
