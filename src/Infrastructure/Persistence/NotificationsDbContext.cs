@@ -8,6 +8,7 @@ public sealed class NotificationsDbContext : DbContext
     public DbSet<ThreadAuthorProjection> ThreadAuthors => Set<ThreadAuthorProjection>();
     public DbSet<CommentAuthorProjection> CommentAuthors => Set<CommentAuthorProjection>();
     public DbSet<HouseholdMemberProjection> HouseholdMembers => Set<HouseholdMemberProjection>();
+    public DbSet<UserEmailProjection> UserEmails => Set<UserEmailProjection>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
 
     public NotificationsDbContext(DbContextOptions<NotificationsDbContext> options)

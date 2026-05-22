@@ -1,3 +1,4 @@
+using Infrastructure.Email;
 using Infrastructure.Managers;
 using Infrastructure.Messaging.Consumers;
 using Infrastructure.Notifications;
@@ -32,6 +33,11 @@ public static class InfrastructureServiceExtensions
         {
             x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("notifications", false));
 
+            // Identity consumers
+            x.AddConsumer<IdentityUserRegisteredConsumer>();
+            x.AddConsumer<IdentityUserEmailConfirmationRequestedConsumer>();
+            x.AddConsumer<IdentityUserPasswordResetRequestedConsumer>();
+
             // Forum consumers
             x.AddConsumer<ForumThreadCreatedConsumer>();
             x.AddConsumer<ForumCommentCreatedConsumer>();
@@ -42,6 +48,9 @@ public static class InfrastructureServiceExtensions
             x.AddConsumer<ForumUserUnbannedConsumer>();
             x.AddConsumer<ForumThreadLockedConsumer>();
             x.AddConsumer<ForumCommunityOwnershipTransferredConsumer>();
+
+            // Household consumers
+            x.AddConsumer<HouseholdMemberInvitedConsumer>();
 
             // Finance consumers
             x.AddConsumer<FinanceHouseholdCreatedConsumer>();
@@ -76,6 +85,9 @@ public static class InfrastructureServiceExtensions
                 cfg.ConfigureEndpoints(context);
             });
         });
+
+        services.Configure<SmtpOptions>(configuration.GetSection("Email"));
+        services.AddScoped<IEmailService, SmtpEmailService>();
 
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationQuery, NotificationQuery>();

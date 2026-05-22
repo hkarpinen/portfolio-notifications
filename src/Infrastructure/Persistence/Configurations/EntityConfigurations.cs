@@ -53,6 +53,18 @@ internal sealed class HouseholdMemberProjectionConfiguration : IEntityTypeConfig
     }
 }
 
+internal sealed class UserEmailProjectionConfiguration : IEntityTypeConfiguration<UserEmailProjection>
+{
+    public void Configure(EntityTypeBuilder<UserEmailProjection> builder)
+    {
+        builder.ToTable("user_email_projections", "notifications");
+        builder.HasKey(x => x.UserId);
+        builder.Property(x => x.UserId).ValueGeneratedNever();
+        builder.Property(x => x.Email).IsRequired().HasMaxLength(256);
+        builder.Property(x => x.DisplayName).IsRequired().HasMaxLength(100);
+    }
+}
+
 internal sealed class ProcessedEventConfiguration : IEntityTypeConfiguration<ProcessedEvent>
 {
     public void Configure(EntityTypeBuilder<ProcessedEvent> builder)
