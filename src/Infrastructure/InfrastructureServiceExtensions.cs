@@ -30,7 +30,7 @@ public static class InfrastructureServiceExtensions
         var rabbitConfig = configuration.GetSection("RabbitMq");
         services.AddMassTransit(x =>
         {
-            x.SetKebabCaseEndpointNameFormatter();
+            x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("notifications", false));
 
             // Forum consumers
             x.AddConsumer<ForumThreadCreatedConsumer>();
